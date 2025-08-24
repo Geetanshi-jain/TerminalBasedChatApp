@@ -71,16 +71,8 @@ The application allows encrypted communication between clients using pre-shared 
 - AES for client-to-client messages  
 - Symmetric key for client-server login authentication  
 
-**Server-Side:**  
-- Handles multiple clients using threads  
-- Stores encrypted credentials  
-- Forwards encrypted messages without decrypting  
-
-**Client-Side:**  
-- Hardcoded AES key for end-to-end encryption  
-- Symmetric login key for authentication  
-- Encrypts before sending, decrypts after receiving  
-
+**Screen View**
+<img src="ScreenView.png" alt="ScreenView" width="400" height="300"/
 ---
 
 ## 🧪 Testing
