@@ -103,3 +103,15 @@ Create a secure terminal-based chat application that supports encrypted messagin
 The code is deployed on GitHub, and you can check out the application through this [link](https://github.com/your-username/your-repo-name).
 
 ## External Features 
+1. Chat Channel (Group Chat) – Allows multiple users to communicate together in a shared channel, sending and receiving messages in real-time.
+
+
+## 🚀 Application Running Steps (Compact)
+
+1. **Clone Repo:** `git clone https://github.com/your-username/your-repo-name.git && cd your-repo-name`  
+2. **Install Packages:** `pip install -r requirements.txt`  
+3. **Run Server:** `python server.py` (starts listening for clients)  
+4. **Run Clients:** `python client.py` (open multiple terminals, enter username & password)  
+5. **Start Chatting:** Choose Channel Chat / Direct Message / Point-to-Point Chat; messages are AES encrypted.  
+6. **Exit:** Type `/exit` in client or close terminal.  
+
