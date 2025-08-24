@@ -97,7 +97,8 @@ TerminalBasedChatApp/
 ---
 
 ## Deployment
-The code is deployed on GitHub. Check out the application [here](https://github.com/your-username/your-repo-name).
+
+The code is deployed on GitHub. Check out the application [here](https://github.com/Geetanshi-jain/TerminalBasedChatApp).
 
 ---
 
