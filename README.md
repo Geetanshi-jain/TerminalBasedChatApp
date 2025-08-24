@@ -101,7 +101,7 @@ The code is deployed on GitHub. Check out the application [here](https://github.
 
 ## 🚀 Application Running Steps (Compact)
 
-1. **Clone Repo:** git clone https://github.com/your-username/your-repo-name.git && cd your-repo-name
+1. **Clone Repo:** git clone [here](https://github.com/Geetanshi-jain/TerminalBasedChatApp)
 2.  **Install Packages:** pip install -r requirements.txt
 3. **Run Server:** python server.py (starts listening for clients)
 4. **Run Clients:** python client.py (open multiple terminals, enter username & password)
