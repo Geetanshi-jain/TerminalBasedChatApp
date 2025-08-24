@@ -71,8 +71,8 @@ The application allows encrypted communication between clients using pre-shared 
 - AES for client-to-client messages  
 - Symmetric key for client-server login authentication  
 
-**Screen View**
-<img src="ScreenView.jpg" alt="ScreenView" width="400" height="300"/>
+##Screen View
+
 
 ---
 
