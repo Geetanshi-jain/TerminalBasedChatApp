@@ -46,17 +46,24 @@ The application allows encrypted communication between clients using pre-shared 
 ## 🔐 Login Process
 1. Client → Server: Sends `username:password` encrypted with the **login symmetric key**.  
 2. Server → Decrypts & verifies credentials.  
-3. On success → Server spawns a **thread** to handle client communication.  
-
+3. On success → Server spawns a **thread** to handle client communication  
 ---
-
 ## 💬 Messaging Process
 1. **Client A** encrypts the message using the **client-to-client AES key**.  
 2. Server forwards the encrypted message **without decryption**.  
 3. **Client B** decrypts it using the same AES key.  
 4. ✅ Only the intended client can read the message.  
+## 📁 Folder Structure
 
-
+```plaintext
+TerminalBasedChatApp/
+├── client.py            # Client-side script
+├── server.py            # Server-side script
+├── requirements.txt     # Python dependencies
+├── README.md            # Project documentation
+├── diagram.png          # Workflow/architecture diagram
+├── ScreenView.jpg       # Screenshot of the application
+```
 ---
 
 ## 🛠️ Implementation - Tech Stack
@@ -105,6 +112,6 @@ The code is deployed on GitHub. Check out the application [here](https://github.
 2.  **Install Packages:** pip install -r requirements.txt
 3. **Run Server:** python server.py (starts listening for clients)
 4. **Run Clients:** python client.py (open multiple terminals, enter username & password)
-5. **Start Chatting:** Choose Channel Chat / Direct Message / Point-to-Point Chat; messages are AES encrypted.
-6. **Exit:** Type /exit in client or close terminal. beautyfiy this
+5. **Start Chatting:** Choose Channel Chat/Point-to-Point Chat messages are AES encrypted.
+6. **Exit:** Type /exit in client or close terminal. 
 
