@@ -25,9 +25,7 @@ Create a secure terminal-based chat application that supports encrypted messagin
 ## Design 
 
 ## High Level Design : 
-## ⚙️ Workflow Diagram
-![Workflow Diagram](diagram.png)
-
+## <img src="diagram.png" alt="Workflow Diagram" width="400" height="300"/>
 
 ---
 
