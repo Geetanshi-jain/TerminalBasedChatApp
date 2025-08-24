@@ -105,6 +105,10 @@ The code is deployed on GitHub. Check out the application [here](https://github.
 
 ## 🚀 Application Running Steps (Compact)
 
-1. **Clone Repo:**  
-```bash
-git clone https://github.com/your-username/your-repo-name.git && cd your-repo-name
+1. **Clone Repo:** git clone https://github.com/your-username/your-repo-name.git && cd your-repo-name
+2.  **Install Packages:** pip install -r requirements.txt
+3. **Run Server:** python server.py (starts listening for clients)
+4. **Run Clients:** python client.py (open multiple terminals, enter username & password)
+5. **Start Chatting:** Choose Channel Chat / Direct Message / Point-to-Point Chat; messages are AES encrypted.
+6. **Exit:** Type /exit in client or close terminal. beautyfiy this
+
