@@ -108,7 +108,7 @@ def send_messages(sock):
     """Main loop for sending messages / selecting modes."""
     while True:
         try:
-            print("\nOptions:\n1. Join channel\n2. Direct message\n3. Point-to-point chat\n4. Quit")
+            print("\nOptions:\n1. Join channel\n2. Point-to-point chat\n4. Quit")
             choice = input("Enter choice: ").strip()
 
             if choice == "1":
