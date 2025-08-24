@@ -1,250 +1,154 @@
-# server.py
-# Robust multi-client chat server with:
-# - login (encrypted password using LOGIN_KEY)
-# - direct / p2p / channel messaging (server forwards ciphertext only)
-# - channel history storage (ciphertexts)
-# - safe recv + timeouts + graceful cleanup
-#
-# NOTE: Server DOES NOT decrypt channel/chat messages (only login is decrypted).
-# Clients must hold CHANNEL_KEY / per-pair keys to decrypt messages.
-
+# server.py (final, working)
 import socket
 import threading
 import json
-from typing import Dict, List
+from typing import Dict
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
 
-# ----------------- CONFIG -----------------
 HOST = '127.0.0.1'
 PORT = 12346
 
-# Hardcoded users: username -> plaintext password (for demo)
+# Hardcoded users
 USERS: Dict[str, str] = {
     "alice": "alicepass",
     "bob": "bobpass",
     "charlie": "charliepass"
 }
 
-# AES key used to encrypt login password payload (clients must use same key)
-LOGIN_KEY = b'loginsecretkey12'   # 16 bytes (AES-128) - demo only
+LOGIN_KEY = b'loginsecretkey12'   # 16 bytes
 
-# Channel key (clients must have this to decrypt channel messages)
-CHANNEL_KEY = b'shdhubsdafb12346'   # 14 bytes here -> make sure clients use same length/key. Prefer 16/32 bytes.
+# Channels (same keys must be in client)
+CHANNELS: Dict[str, Dict] = {
+    "channel1": {"key": b'generalchannelk1', "members": set(), "history": []},
+    "channel2": {"key": b'devchannelkey123', "members": set(), "history": []},
+    "channel3": {"key": b'secretchannelkey', "members": set(), "history": []},
+}
 
-# ----------------- Shared state -----------------
-# username -> socket
 username_to_conn: Dict[str, socket.socket] = {}
-# socket -> username
 conn_to_username: Dict[socket.socket, str] = {}
-# channel history: list of dicts {"from": username, "payload": {"iv": "...", "ct": "..."}}
-channel_messages: List[Dict] = []
 
-# Locks for thread-safety
 map_lock = threading.Lock()
-history_lock = threading.Lock()
+channels_lock = threading.Lock()
 
-# ----------------- AES helper (login decrypt) -----------------
 def aes_decrypt(key: bytes, iv: bytes, ct: bytes) -> str:
-    """Decrypt AES-CBC ciphertext and return plaintext string."""
     cipher = AES.new(key, AES.MODE_CBC, iv)
-    pt = unpad(cipher.decrypt(ct), AES.block_size)
-    return pt.decode()
+    return unpad(cipher.decrypt(ct), AES.block_size).decode()
 
-# ----------------- Networking helpers -----------------
 def send_json(conn: socket.socket, obj: dict):
-    """Send JSON object as one frame (utf-8)."""
     try:
         conn.sendall(json.dumps(obj).encode('utf-8'))
     except Exception:
-        # ignore; caller handles cleanup
         pass
 
 def safe_recv_json(conn: socket.socket, bufsize: int = 8192):
-    """
-    Receive one JSON object. This expects the client to send one JSON per send.
-    Returns parsed dict on success.
-    Raises:
-      ValueError on peer closed / bad data
-      TimeoutError on socket timeout (caller may continue)
-    """
-    try:
-        data = conn.recv(bufsize)
-        if not data:
-            raise ValueError("peer closed")
-        text = data.decode('utf-8', errors='ignore').strip()
-        if not text:
-            raise ValueError("empty")
-        try:
-            return json.loads(text)
-        except json.JSONDecodeError:
-            # bad frame; caller can decide to ignore
-            raise ValueError("bad json")
-    except socket.timeout:
-        raise TimeoutError
-    except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError):
-        raise ValueError("peer reset")
+    data = conn.recv(bufsize)
+    if not data:
+        raise ValueError("peer closed")
+    text = data.decode('utf-8', errors='ignore').strip()
+    if not text:
+        raise ValueError("empty")
+    return json.loads(text)
 
-def forward_to_user(username: str, msg_obj: dict):
-    """Send msg_obj to a specific connected user if present."""
+def broadcast_to_channel(channel: str, msg_obj: dict):
+    with channels_lock:
+        members = set(CHANNELS[channel]["members"])
     with map_lock:
-        dest = username_to_conn.get(username)
-    if not dest:
-        return
-    try:
-        dest.sendall(json.dumps(msg_obj).encode('utf-8'))
-    except Exception:
-        # ignore; handler will cleanup later
-        pass
-
-def broadcast_all(msg_obj: dict):
-    """Broadcast msg_obj to all connected users (best-effort)."""
-    with map_lock:
-        conns = list(username_to_conn.values())
-    payload = json.dumps(msg_obj).encode('utf-8')
+        conns = [username_to_conn[u] for u in members if u in username_to_conn]
     for c in conns:
         try:
-            c.sendall(payload)
-        except Exception:
-            # ignore failures here
+            c.sendall(json.dumps(msg_obj).encode('utf-8'))
+        except:
             pass
 
 def cleanup_conn(conn: socket.socket):
-    """Remove mappings and close socket for a connection."""
     with map_lock:
-        user = conn_to_username.pop(conn, None)
-        if user and username_to_conn.get(user) is conn:
-            username_to_conn.pop(user, None)
-    try:
-        conn.close()
-    except Exception:
-        pass
-    if user:
-        print(f"[INFO] {user} disconnected")
+        uname = conn_to_username.pop(conn, None)
+        if uname and username_to_conn.get(uname) is conn:
+            username_to_conn.pop(uname, None)
+    if uname:
+        with channels_lock:
+            for ch in CHANNELS.values():
+                ch["members"].discard(uname)
+        print(f"[INFO] {uname} disconnected and removed from channels")
+    try: conn.close()
+    except: pass
 
-# ----------------- Client handler -----------------
 def handle_client(conn: socket.socket, addr):
     print(f"[INFO] Connection from {addr}")
-    conn.settimeout(6.0)  # periodic timeout so thread can check loop conditions
-    username = None
     try:
-        # ---------------- LOGIN PHASE ----------------
-        try:
-            login_obj = safe_recv_json(conn, bufsize=2048)
-        except TimeoutError:
-            send_json(conn, {"type": "login", "status": "fail", "reason": "timeout"})
-            return
-        except ValueError:
-            send_json(conn, {"type": "login", "status": "fail", "reason": "bad-frame"})
-            return
-
-        # Expecting: {"username": "...", "payload": {"iv":"hex", "ct":"hex"}}
-        payload = login_obj.get("payload", {})
+        # ---- LOGIN ----
+        login_obj = safe_recv_json(conn, bufsize=2048)
         uname = login_obj.get("username")
-        if not uname or "iv" not in payload or "ct" not in payload:
-            send_json(conn, {"type": "login", "status": "fail", "reason": "invalid-fields"})
-            return
+        payload = login_obj.get("payload", {})
+        iv = bytes.fromhex(payload["iv"])
+        ct = bytes.fromhex(payload["ct"])
+        password = aes_decrypt(LOGIN_KEY, iv, ct)
 
-        # decrypt password using LOGIN_KEY
-        try:
-            iv = bytes.fromhex(payload["iv"])
-            ct = bytes.fromhex(payload["ct"])
-            password = aes_decrypt(LOGIN_KEY, iv, ct)
-        except Exception:
-            send_json(conn, {"type": "login", "status": "fail", "reason": "decrypt-failed"})
+        if USERS.get(uname) != password:
+            send_json(conn, {"type":"login","status":"fail","reason":"invalid-creds"})
             return
+        with map_lock:
+            username_to_conn[uname] = conn
+            conn_to_username[conn] = uname
+        send_json(conn, {"type":"login","status":"ok"})
+        print(f"[INFO] {uname} logged in")
 
-        # verify
-        if uname in USERS and USERS[uname] == password:
-            send_json(conn, {"type": "login", "status": "ok"})
-            with map_lock:
-                username_to_conn[uname] = conn
-                conn_to_username[conn] = uname
-            username = uname
-            print(f"[INFO] {username} logged in from {addr}")
-        else:
-            send_json(conn, {"type": "login", "status": "fail", "reason": "invalid-creds"})
-            return
-
-        # ---------------- MESSAGE LOOP ----------------
+        # ---- MAIN LOOP ----
         while True:
-            try:
-                msg_obj = safe_recv_json(conn)
-            except TimeoutError:
-                # no data this interval, continue waiting
-                continue
-            except ValueError:
-                # peer closed or bad frame -> exit loop
-                break
-
-            # Expected message types:
-            # - direct: {"mode":"direct","from":..., "to":..., "payload": {...}}
-            # - p2p: same as direct
-            # - channel: {"mode":"channel","from":..., "payload": {...}}
-            # - channel_history_request: {"mode":"channel_history_request"}
+            msg_obj = safe_recv_json(conn)
             mode = msg_obj.get("mode")
 
-            if mode == "direct" or mode == "p2p":
+            if mode == "join":
+                channel = msg_obj.get("channel")
+                provided = msg_obj.get("key", "").encode()
+                if channel in CHANNELS and provided == CHANNELS[channel]["key"]:
+                    with channels_lock:
+                        CHANNELS[channel]["members"].add(uname)
+                        history_copy = list(CHANNELS[channel]["history"])
+                    send_json(conn, {"mode":"join_response","status":"ok","channel":channel,"items":history_copy})
+                    print(f"[INFO] {uname} joined {channel}")
+                else:
+                    send_json(conn, {"mode":"join_response","status":"fail"})
+                continue
+
+            if mode == "channel":
+                channel = msg_obj.get("channel")
+                if channel not in CHANNELS: continue
+                with channels_lock:
+                    if uname not in CHANNELS[channel]["members"]:
+                        continue
+                    CHANNELS[channel]["history"].append({"from": uname, "payload": msg_obj["payload"]})
+                broadcast_to_channel(channel, msg_obj)
+                continue
+
+            if mode in ("direct","p2p"):
                 to_user = msg_obj.get("to")
-                if not to_user:
-                    # ignore malformed
-                    continue
-                forward_to_user(to_user, msg_obj)
-
-            elif mode == "channel":
-                # store ciphertext (server does not decrypt message)
-                item = {"from": msg_obj.get("from", "?"), "payload": msg_obj.get("payload", {})}
-                with history_lock:
-                    channel_messages.append(item)
-                # broadcast to all connected users
-                broadcast_all(msg_obj)
-
-            elif mode == "channel_history_request":
-                # send stored channel messages (ciphertext objects)
-                with history_lock:
-                    history_copy = list(channel_messages)
-                resp = {"mode": "channel_history_response", "items": history_copy}
-                send_json(conn, resp)
-
-            else:
-                # unknown mode - optionally inform client
-                send_json(conn, {"type": "error", "reason": "unknown-mode"})
+                with map_lock:
+                    dest = username_to_conn.get(to_user)
+                if dest:
+                    dest.sendall(json.dumps(msg_obj).encode())
                 continue
 
     except Exception as e:
-        print(f"[ERROR] handler for {addr}: {e}")
+        print(f"[ERROR] {addr}: {e}")
     finally:
         cleanup_conn(conn)
 
-# ----------------- MAIN -----------------
 def main():
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server.bind((HOST, PORT))
-    server.listen(20)
-    print(f"[INFO] Server listening on {HOST}:{PORT}")
-
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    s.bind((HOST, PORT))
+    s.listen(50)
+    print(f"[INFO] Server listening {HOST}:{PORT}")
     try:
         while True:
-            conn, addr = server.accept()
-            t = threading.Thread(target=handle_client, args=(conn, addr), daemon=True)
-            t.start()
+            conn, addr = s.accept()
+            threading.Thread(target=handle_client,args=(conn,addr),daemon=True).start()
     except KeyboardInterrupt:
-        print("\n[INFO] Server shutting down (KeyboardInterrupt)")
+        print("Shutting down server")
     finally:
-        # close all client sockets
-        with map_lock:
-            conns = list(username_to_conn.values())
-        for c in conns:
-            try:
-                c.shutdown(socket.SHUT_RDWR)
-            except Exception:
-                pass
-            try:
-                c.close()
-            except Exception:
-                pass
-        server.close()
+        s.close()
 
 if __name__ == "__main__":
     main()
