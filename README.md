@@ -56,6 +56,7 @@ The application allows encrypted communication between clients using pre-shared 
 3. **Client B** decrypts it using the same AES key.  
 4. ✅ Only the intended client can read the message.  
 
+
 ---
 
 ## 🛠️ Implementation - Tech Stack
@@ -72,7 +73,7 @@ The application allows encrypted communication between clients using pre-shared 
 - Symmetric key for client-server login authentication  
 
 ##Screen View
-
+![Uploading WhatsApp Image 2025-08-24 at 14.33.41_f351a637.jpg…]()
 
 ---
 
