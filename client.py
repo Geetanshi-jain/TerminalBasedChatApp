@@ -4,7 +4,7 @@ from Crypto.Util.Padding import pad, unpad
 from Crypto.Random import get_random_bytes
 from colorama import Fore, Style
 
-HOST, PORT = '127.0.0.1', 12346
+HOST, PORT = '192.168.55.165', 12346
 LOGIN_KEY = b'loginsecretkey12'
 
 # Must match server (for channel chats)
