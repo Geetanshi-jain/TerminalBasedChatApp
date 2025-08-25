@@ -22,11 +22,12 @@ The application allows encrypted communication between clients using pre-shared 
 
 
 ## High-Level Design
+## point to point communication 
 <img src="diagram.png" alt="diagram" width="400" height="400">
 
 
 
-##Channel Communication
+## Channel Communication
 ![WhatsApp Image 2025-08-25 at 14 26 07_23b92820](https://github.com/user-attachments/assets/a854272f-72aa-4047-8888-32d0e2eed362)
 
 
