@@ -1,10 +1,16 @@
-from scapy.all import sniff, TCP, Raw
+from scapy.all import sniff, TCP, Raw, IP
 
-SERVER_PORT = 12346  # jo port aapka server use kar raha hai
+SERVER_IP = "192.168.55.165"   # आपका server ip
+SERVER_PORT = 12346            # आपका server port
 
 def packet_callback(packet):
     if packet.haslayer(TCP) and packet.haslayer(Raw):
-        print(f"[SPY] Raw Encrypted Data: {packet[Raw].load}")
+        ip_layer = packet.getlayer(IP)
+        tcp_layer = packet.getlayer(TCP)
 
-print(f"[SPY] Listening for TCP traffic on port {SERVER_PORT} ...")
-sniff(filter=f"tcp port {SERVER_PORT}", prn=packet_callback, store=0, iface="lo0")
+        if tcp_layer.dport == SERVER_PORT or tcp_layer.sport == SERVER_PORT:
+            print(f"\n[PACKET] {ip_layer.src} -> {ip_layer.dst}  |  {len(packet[Raw].load)} bytes")
+            print(f"Raw Data (encrypted): {packet[Raw].load[:100]}")  # सिर्फ first 100 bytes दिखाएंगे
+
+print(f"[INFO] Listening on TCP port {SERVER_PORT} ... (Ctrl+C to stop)")
+sniff(filter=f"tcp port {SERVER_PORT}", prn=packet_callback, store=False)
