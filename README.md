@@ -22,7 +22,8 @@ The application allows encrypted communication between clients using pre-shared 
 ---
 
 ## High-Level Design
-<img src="diagram.png" alt="Workflow Diagram" width="400" height="300"/>
+![WhatsApp Image 2025-08-25 at 14 26 07_23b92820](https://github.com/user-attachments/assets/a854272f-72aa-4047-8888-32d0e2eed362)
+
 
 ---
 
@@ -79,7 +80,8 @@ TerminalBasedChatApp/
 - AES for client-to-client messages  
 - Symmetric key for client-server login authentication  
 
-##Screen View![WhatsApp Image 2025-08-25 at 14 26 07_23b92820](https://github.com/user-attachments/assets/da838cb3-8957-4139-9c3f-e5c1bbefc74b)
+![ScreenView](https://github.com/user-attachments/assets/3f203857-efa5-4585-a15d-ea230796ba33)
+
 
 ---
 
