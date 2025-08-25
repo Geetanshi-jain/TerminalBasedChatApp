@@ -22,7 +22,8 @@ The application allows encrypted communication between clients using pre-shared 
 ---
 
 ## High-Level Design
-<img width="400" height="400" alt="diagram (1)" src="https://github.com/user-attachments/assets/f88ccce1-47ef-4cea-9128-db1082051348" />
+<img src="diagram.png" alt="diagram" width="400" height="400">
+
 
 
 ##Channel Communication
