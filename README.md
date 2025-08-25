@@ -80,8 +80,9 @@ TerminalBasedChatApp/
 - Symmetric key for client-server login authentication  
 
 ##Screen View
-![ScreenView](https://github.com/user-attachments/assets/4afbf3df-dfb2-463d-9b1f-0d05a869f0a6)
- 
+
+ ![WhatsApp Image 2025-08-25 at 14 26 07_23b92820](https://github.com/user-attachments/assets/217506a4-2e57-4fd2-81bc-bd4ea76695c7)
+
 
 
 ---
