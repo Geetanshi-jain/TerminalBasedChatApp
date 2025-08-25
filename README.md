@@ -79,11 +79,7 @@ TerminalBasedChatApp/
 - AES for client-to-client messages  
 - Symmetric key for client-server login authentication  
 
-##Screen View
-![WhatsApp Image 2025-08-25 at 14 26 07_23b92820](https://github.com/user-attachments/assets/3288cc7e-2f7c-475f-8b4e-bbaa7b17abd5)
-
-
-
+##Screen View![WhatsApp Image 2025-08-25 at 14 26 07_23b92820](https://github.com/user-attachments/assets/da838cb3-8957-4139-9c3f-e5c1bbefc74b)
 
 ---
 
