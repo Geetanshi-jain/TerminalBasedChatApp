@@ -1,4 +1,4 @@
-# 🔒 Terminal-Based Encrypted Chat Application
+# 🔒 Terminal-Based End-to-End Encrypted Chat Application
 
 ## Introduction
 A **secure terminal-based chat application** that allows multiple users to communicate in real-time over a network. All messages are **end-to-end encrypted** using AES, ensuring only intended recipients can read them.
