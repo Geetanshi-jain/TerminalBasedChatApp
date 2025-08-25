@@ -19,7 +19,7 @@ Build a secure terminal-based chat system with encrypted messaging. Authenticati
 ## Solution
 The application allows encrypted communication between clients using pre-shared AES keys. Only authenticated users can participate. The **server acts as a relay**, forwarding encrypted messages without access to the plaintext. Login credentials are also encrypted using a separate symmetric key for secure authentication.
 
----
+
 
 ## High-Level Design
 <img src="diagram.png" alt="diagram" width="400" height="400">
